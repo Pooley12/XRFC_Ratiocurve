@@ -1,7 +1,13 @@
 Generating Ratiocurves for analysing X-ray Framing Cameras (XRFC) / Gated X-ray Detectors (GXD)
 
-The spectral emission, detector response and ratiocurve is calculated with Ratiocurve_calculation.py
-This requires access to the Prism code Spect3D (https://www.prism-cs.com/Software/Spect3D/overview.html)
+The spectral emission, detector response and ratiocurve is calculated with Ratiocurve_calculation.py.
+
+Filter responses are generated using Heneke tables (https://henke.lbl.gov/optical_constants/).
+
+Detector sensitivity is an extension of G. A. Rochau et al. "Energy dependent sensitivity of microchannel plate detectors." Rev. Sci. Instrum. 77, 10E323 (2006).
+   
+
+Spectral emission is calculated using the Prism code Spect3D (https://www.prism-cs.com/Software/Spect3D/overview.html).
 
 To cite this:
 
