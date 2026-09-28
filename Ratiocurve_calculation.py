@@ -748,7 +748,7 @@ class Create_Ratiocurves:
             for n in range(0, len(self.All_nes), 1):
                 ne = self.All_nes[n]
                 color = f"C{n}"  # Use matplotlib's default color cycle
-                ax.plot(self.All_Tes, ratios[n, :], 'o', color=color)
+                # ax.plot(self.All_Tes, ratios[n, :], 'o', color=color)
                 ax.plot(New_temps, interp_ratios[n, :], '-', label='{}'.format(str(ne).replace('+', '')), color=color)
                 if self.add_errors:
                     ax.fill_between(New_temps, interp_ratios_minus[n, :], interp_ratios_plus[n, :], color=color, alpha=0.3)
@@ -762,6 +762,7 @@ class Create_Ratiocurves:
             Filter_string = r'$\frac{{{}}}{{{}}}$'.format(filter_string(self.Filters[0]), filter_string(self.Filters[1]))
             plt.suptitle(('Ratiocurves for Filter pack:\n'+ Filter_string), fontsize=18)
             plt.minorticks_on()
+            plt.xlim(0, 1000)
             plt.show()
 
         self.Te, self.Ratio = New_temps, interp_ratios
@@ -817,11 +818,21 @@ if __name__ == "__main__":
     ##                                                           ##
     ###############################################################
 
+    ## Choose whether the run the SPECT3D simulations
+    Run_SPECT3D = True  # Set to False if you only want to use existing data
+
     ## The foil composition should be written as:
     ## ['<CHEMICAL_FORMULA_1> <FRACTION_1>', '<CHEMICAL_FORMULA_2> <FRACTION_2>', etc.]
-    Foil_composition = ['C 0.499', 'H 0.438', 'Cl 0.063']
-    OUTPUT_file_loc = os.path.join(PARENT_loc, 'Ratiocurves', 'CHCl')
-    PROPACEOS_file = os.path.join(PROPACEOS_loc, 'C49_9H43_8Cl6_3.prp')
+    ## Supersonic
+    # Foil_composition = ['C 0.499', 'H 0.438', 'Cl 0.063']
+    # OUTPUT_file_loc = os.path.join(PARENT_loc, 'Ratiocurves', 'CHCl')
+    # PROPACEOS_file = os.path.join(PROPACEOS_loc, 'C49_9H43_8Cl6_3.prp')
+
+    ## Subsonic
+    Foil_composition = ['C 0.5', 'H 0.5']
+    OUTPUT_file_loc = os.path.join(PARENT_loc, 'Ratiocurves', 'CH')
+    PROPACEOS_file = os.path.join(PROPACEOS_loc, 'CH.prp')
+    
     if not os.path.exists(OUTPUT_file_loc):
         os.makedirs(OUTPUT_file_loc)
     if not os.path.exists(PROPACEOS_file):
@@ -832,19 +843,19 @@ if __name__ == "__main__":
     ## OMEGA Te Resolution
     Electron_temps = np.concatenate([np.arange(20, 150, 1), np.arange(150, 1000, 10), np.arange(1000, 3000, 100), np.arange(3000, 5010, 1000)]) # eV
     ## NIF Te Resolution
-    # Electron_temps = np.concatenate([np.arange(50, 1000, 10), np.arange(1000, 3000, 25), np.arange(3000, 5010, 50)]) # eV
-    Electron_temps = [100, 200, 400, 500, 800, 900, 1200]
+    # Electron_temps = np.concatenate([np.arange(50, 1000, 10),  np.arange(1000, 3000, 25), np.arange(3000, 5010, 50)]) # eV
 
     ## Electron density resolution
     # Electron_dens = [8e19, 9e19, 1e20, 2e20, 3e20, 4e20, 5e20, 6e20, 7e20, 8e2x0, 9e20, 1e21] # cm^-3
-    Electron_dens = [1e20, 5e20] # cm^-3
+    Electron_dens = [3e20, 6e20] # cm^-3
 
     ## This code can only work with two filters.
     ## The filters should be written as:
     ## [[Filter_pack_1], [Filter_pack_2]]
     ## Each filter pack should be writtin as:
     ## ['<FILTER_1> <FILTER_1_THICKNESS_μm> <FILTER_1_THICKNESS_FRACTION_ERROR>', etc.]
-    Filters = [['Mylar 1 0', 'V 0.2 0', 'Al 0.8 0'], ['Mylar 2 0', 'V 0.2 0', 'Al 0.8 0']]
+    # Filters = [['Mylar 1 0', 'V 0.2 0', 'Al 0.8 0'], ['Mylar 2 0', 'V 0.2 0', 'Al 0.8 0']]
+    Filters = [['Mylar 3 -0.1', 'Ti 0.2 0.4'], ['Mylar 5 -0.1', 'Ti 0.2 0.4']]
 
     ###############################################################
 
@@ -857,14 +868,15 @@ if __name__ == "__main__":
                     Electron_temperature=Electron_temps, Electron_density=Electron_dens,
                     Size=Spect3D_areal_size, Spect3D_workspace=Spect3D_workspace, Spect3D_program=Spect3D_program_loc,
                     PROPACEOS_file=PROPACEOS_file)
-    ## Run the calculations in parallel
-    # CALCS.run_parallel_calcs()
-    # ## Run the calculations linear - (use if parallel fails)
-    # # CALCS.run_linear_calcs()
-    
-    # ## Choose how to save the outputs
-    # CALCS.create_npz_output()
-    # CALCS.create_dat_output()
+    if Run_SPECT3D:
+        ## Run the calculations in parallel
+        CALCS.run_parallel_calcs()
+        # ## Run the calculations linear - (use if parallel fails)
+        # # CALCS.run_linear_calcs()
+        
+        ## Choose how to save the outputs
+        CALCS.create_npz_output()
+        # CALCS.create_dat_output()
 
     #%%
     ## Create Ratiocurves
@@ -874,5 +886,6 @@ if __name__ == "__main__":
     CREATE = Create_Ratiocurves(Filters=Filters, Filter_loc=FILTER_loc, Detector_Sensitivity_loc=DETECTOR_SENSITIVITY_loc,
                     SCATTERING_CALC=CALCS, type='npz', Add_errors=True)
     
-    CREATE.get_ratiocurves()
+    CREATE.get_ratiocurves(plot=True)
     ## There are other functions in the Create_Ratiocurves class that I need to tidy up...
+# %%
